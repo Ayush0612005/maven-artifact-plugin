@@ -353,7 +353,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         return null;
     }
 
-    private RemoteRepository createReferenceRepo() throws MojoExecutionException {
+    RemoteRepository createReferenceRepo() throws MojoExecutionException {
         if (referenceRepo.contains("::")) {
             // id::url
             int index = referenceRepo.indexOf("::");

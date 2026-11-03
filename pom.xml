@@ -196,6 +196,19 @@
       <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.maven.plugin-testing</groupId>
+      <artifactId>maven-plugin-testing-harness</artifactId>
+      <version>3.5.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <!-- This very old version is because the maven-plugin-testing-harness requires it. -->
+      <version>1.7.36</version>
+      <scope>test</scope>
+    </dependency>
     <!-- reproducible-central report -->
     <dependency>
       <groupId>org.apache.maven.doxia</groupId>
