@@ -28,7 +28,10 @@ import org.apache.maven.api.plugin.testing.MojoParameter;
 import org.apache.maven.api.plugin.testing.MojoTest;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.repository.Proxy;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RepositoryPolicy;
+import org.eclipse.aether.util.repository.AuthenticationBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
@@ -36,6 +39,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
@@ -110,6 +114,47 @@ class CompareMojoCreateReferenceRepoTest {
         RemoteRepository result = mojo.createReferenceRepo();
 
         assertRemoteRepo(result, "my-mirror", "https://my-mirror.example.nl/central");
+    }
+
+    @Test
+    @InjectMojo(goal = "compare")
+    void mirrorForSeveralRepositoriesRetainsEffectiveConfiguration(CompareMojo mojo) throws Exception {
+        RemoteRepository releases =
+                new RemoteRepository.Builder("releases", "default", "https://releases.example.invalid/").build();
+        RemoteRepository central =
+                new RemoteRepository.Builder("central", "default", "https://repo.maven.apache.org/maven2/").build();
+        RemoteRepository mirror = new RemoteRepository.Builder(
+                        "my-mirror", "default", "https://mirror.example.invalid/")
+                .addMirroredRepository(releases)
+                .addMirroredRepository(central)
+                .setAuthentication(
+                        new AuthenticationBuilder().addUsername("test-user").build())
+                .setProxy(new Proxy("http", "proxy.example.invalid", 8080))
+                .setReleasePolicy(new RepositoryPolicy(
+                        true, RepositoryPolicy.UPDATE_POLICY_NEVER, RepositoryPolicy.CHECKSUM_POLICY_FAIL))
+                .build();
+        remoteRepos.add(mirror);
+
+        // Reuse the effective repository, including its credentials, proxy and policies.
+        assertSame(mirror, mojo.createReferenceRepo());
+    }
+
+    @Test
+    @InjectMojo(goal = "compare")
+    @MojoParameter(name = "referenceRepo", value = "my-mirror")
+    void mirrorCanBeSelectedByItsOwnId(CompareMojo mojo) throws Exception {
+        setResolvableMirrorRepo("my-mirror", "https://mirror.example.invalid/", "central");
+
+        assertSame(remoteRepos.get(0), mojo.createReferenceRepo());
+    }
+
+    @Test
+    @InjectMojo(goal = "compare")
+    void unrelatedMirrorDoesNotMatchCentral(CompareMojo mojo) {
+        setResolvableMirrorRepo("my-mirror", "https://mirror.example.invalid/", "releases");
+
+        MojoExecutionException ex = assertThrows(MojoExecutionException.class, mojo::createReferenceRepo);
+        assertEquals("Could not find repository with id = central", ex.getMessage());
     }
 
     @Test
