@@ -371,6 +371,14 @@ public class CompareMojo extends AbstractBuildinfoMojo {
                 return repo;
             }
         }
+        // An effective mirror has its own id; retain the mirror when matching an original repository.
+        for (RemoteRepository repo : remoteRepos) {
+            for (RemoteRepository mirrored : repo.getMirroredRepositories()) {
+                if (referenceRepo.equals(mirrored.getId())) {
+                    return repo;
+                }
+            }
+        }
         throw new MojoExecutionException("Could not find repository with id = " + referenceRepo);
     }
 

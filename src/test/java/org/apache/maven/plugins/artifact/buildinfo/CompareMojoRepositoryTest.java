@@ -71,6 +71,13 @@ class CompareMojoRepositoryTest {
     }
 
     @Test
+    void effectiveRepositoryIdTakesPrecedenceOverAMirroredOriginalId() {
+        RemoteRepository mirror = mirror(CENTRAL);
+
+        assertSame(CENTRAL, assertDoesNotThrow(() -> select("central", Arrays.asList(mirror, CENTRAL))));
+    }
+
+    @Test
     void doesNotTreatAnUnrelatedMirrorAsCentral() {
         RemoteRepository releases = new RemoteRepository.Builder(
                         "company-releases", "default", "https://releases.example.invalid/")
